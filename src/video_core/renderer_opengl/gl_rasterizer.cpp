@@ -480,7 +480,7 @@ void RasterizerOpenGL::FlushRegion(DAddr addr, u64 size, VideoCommon::CacheType 
     if (addr == 0 || size == 0) {
         return;
     }
-    if (True(which & VideoCommon::CacheType::TextureCache)) {
+    if (True(which & VideoCommon::CacheType::TextureCache) && Settings::IsGPULevelHigh()) {
         std::scoped_lock lock{texture_cache.mutex};
         texture_cache.DownloadMemory(addr, size);
     }
