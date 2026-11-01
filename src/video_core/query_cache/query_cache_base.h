@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <mutex>
 #include <optional>
@@ -56,6 +57,10 @@ public:
                             RuntimeType& runtime_);
 
     ~QueryCacheBase();
+
+    [[nodiscard]] bool HasQueries() const noexcept {
+        return num_cached_queries.load(std::memory_order_relaxed) > 0;
+    }
 
     void InvalidateRegion(VAddr addr, std::size_t size) {
         IterateCache<true>(addr, size,
@@ -120,6 +125,9 @@ public:
 protected:
     template <bool remove_from_cache, typename Func>
     void IterateCache(VAddr addr, std::size_t size, Func&& func) {
+        if (num_cached_queries.load(std::memory_order_relaxed) == 0) {
+            return;
+        }
         static constexpr bool RETURNS_BOOL =
             std::is_same_v<std::invoke_result<Func, QueryLocation>, bool>;
         const u64 addr_begin = addr;
@@ -155,7 +163,10 @@ protected:
                 const auto in_range2 = [&](const std::pair<u32, QueryLocation>& pair) {
                     return in_range(pair.first);
                 };
-                erase_if(contents, in_range2);
+                const auto erased = erase_if(contents, in_range2);
+                if (erased > 0) {
+                    num_cached_queries.fetch_sub(erased, std::memory_order_relaxed);
+                }
             }
         }
     }
@@ -169,6 +180,7 @@ protected:
     void UnregisterPending();
 
     ::Common::unordered_map<u64, ::Common::unordered_map<u32, QueryLocation>> cached_queries;
+    std::atomic<size_t> num_cached_queries{0};
     std::mutex cache_mutex;
 
     struct QueryCacheBaseImpl;

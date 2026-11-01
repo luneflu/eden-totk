@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <bit>
 #include <functional>
 #include <memory>
@@ -240,6 +241,10 @@ public:
     bool OnCPUWrite(DAddr device_addr, u64 size);
 
     void DownloadMemory(DAddr device_addr, u64 size);
+
+    [[nodiscard]] bool HasGpuModifiedRanges() const noexcept {
+        return has_gpu_modified.load(std::memory_order_relaxed);
+    }
 
     std::optional<VideoCore::RasterizerDownloadArea> GetFlushArea(DAddr device_addr, u64 size);
 
@@ -514,6 +519,7 @@ private:
     MemoryTracker memory_tracker;
     Common::RangeSet<DAddr> uncommitted_gpu_modified_ranges;
     Common::RangeSet<DAddr> gpu_modified_ranges;
+    std::atomic<bool> has_gpu_modified{false};
     std::deque<Common::RangeSet<DAddr>> committed_gpu_modified_ranges;
 
     // Async Buffers

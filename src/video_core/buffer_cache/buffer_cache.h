@@ -26,6 +26,7 @@ BufferCache<P>::BufferCache(Tegra::MaxwellDeviceMemoryManager& device_memory_, R
     // Ensure the first slot is used for the null buffer
     void(slot_buffers.insert(runtime, NullBufferParams{}));
     gpu_modified_ranges.Clear();
+    has_gpu_modified.store(false, std::memory_order_relaxed);
     inline_buffer_id = NULL_BUFFER_ID;
 #ifdef YUZU_LEGACY
     immediately_free = (Settings::values.vram_usage_mode.GetValue() == Settings::VramUsageMode::Aggressive);
@@ -1529,6 +1530,7 @@ void BufferCache<P>::MarkWrittenBuffer(BufferId buffer_id, DAddr device_addr, u3
     }
     memory_tracker.MarkRegionAsGpuModified(device_addr, size);
     gpu_modified_ranges.Add(device_addr, size);
+    has_gpu_modified.store(true, std::memory_order_relaxed);
     uncommitted_gpu_modified_ranges.Add(device_addr, size);
 }
 
@@ -1934,6 +1936,7 @@ void BufferCache<P>::DownloadBufferMemory(Buffer& buffer, DAddr device_addr, u64
             gpu_modified_ranges.ForEachInRange(device_addr_out, range_size, add_download);
             ClearDownload(device_addr_out, range_size);
             gpu_modified_ranges.Subtract(device_addr_out, range_size);
+            has_gpu_modified.store(!gpu_modified_ranges.Empty(), std::memory_order_relaxed);
         });
     if (total_size_bytes == 0) {
         return;

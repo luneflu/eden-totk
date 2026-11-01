@@ -485,9 +485,11 @@ void RasterizerOpenGL::FlushRegion(DAddr addr, u64 size, VideoCommon::CacheType 
         texture_cache.DownloadMemory(addr, size);
     }
     if ((True(which & VideoCommon::CacheType::BufferCache))) {
-        std::scoped_lock lock{buffer_cache.mutex};
-        if (buffer_cache.IsRegionGpuModified(addr, size)) {
-            buffer_cache.DownloadMemory(addr, size);
+        if (buffer_cache.HasGpuModifiedRanges()) {
+            std::scoped_lock lock{buffer_cache.mutex};
+            if (buffer_cache.IsRegionGpuModified(addr, size)) {
+                buffer_cache.DownloadMemory(addr, size);
+            }
         }
     }
     if ((True(which & VideoCommon::CacheType::QueryCache))) {
@@ -497,6 +499,9 @@ void RasterizerOpenGL::FlushRegion(DAddr addr, u64 size, VideoCommon::CacheType 
 
 bool RasterizerOpenGL::MustFlushRegion(DAddr addr, u64 size, VideoCommon::CacheType which) {
     if ((True(which & VideoCommon::CacheType::BufferCache))) {
+        if (!buffer_cache.HasGpuModifiedRanges()) {
+            return false;
+        }
         std::scoped_lock lock{buffer_cache.mutex};
         if (buffer_cache.IsRegionGpuModified(addr, size)) {
             return true;
