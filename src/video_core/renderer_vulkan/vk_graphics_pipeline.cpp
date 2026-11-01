@@ -471,6 +471,16 @@ bool GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     }
     ASSERT(views.size() == num_image_elements);
     ASSERT(samplers.size() == num_textures);
+    // Metroid Prime 4 Beyond (0x010019a01e2f2000): RUDE engine HZB depth reduction passes use
+    // normalized textureLod with uniform-scaled offsets. Rescaling intermediate pyramid targets
+    // causes 4-tap point reductions to sample 4 of 16 host texels (1/4 coverage), breaking
+    // bounding-box culling and disabling visor target lock-on.
+    if (program_id == 0x010019a01e2f2000ULL &&
+        (key.unique_hashes[5] == 0xe447572b809aa419ULL ||
+         key.unique_hashes[5] == 0x55341031d47e2c6dULL)) {
+        texture_cache.DisableRescalingOnCurrentRenderTargets();
+    }
+    texture_cache.UpdateRenderTargets(false);
     texture_cache.FillImageViews(std::span(views.data(), views.size()), false, Spec::has_images);
 
     VideoCommon::ImageViewInOut* texture_buffer_it{views.data()};
@@ -574,7 +584,6 @@ bool GraphicsPipeline::ConfigureImpl(bool is_indexed) {
         buffer_cache.runtime.PostCopyBarrier();
         buffer_cache.any_buffer_uploaded = false;
     }
-    texture_cache.UpdateRenderTargets(false);
     texture_cache.CheckFeedbackLoop(std::span<const VideoCommon::ImageViewInOut>{views.data(),
                                                                                  views.size()});
     if (IsBuilt() && !pipeline) {

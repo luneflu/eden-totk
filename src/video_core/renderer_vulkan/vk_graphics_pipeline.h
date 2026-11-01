@@ -139,9 +139,13 @@ public:
         return [](GraphicsPipeline* pl, bool is_indexed) { return pl->ConfigureImpl<Spec>(is_indexed); };
     }
 
-    void SetEngine(Tegra::Engines::Maxwell3D* maxwell3d_, Tegra::MemoryManager* gpu_memory_) {
+    void SetEngine(Tegra::Engines::Maxwell3D* maxwell3d_, Tegra::MemoryManager* gpu_memory_,
+                   u64 program_id_ = 0) {
         maxwell3d = maxwell3d_;
         gpu_memory = gpu_memory_;
+        if (program_id_ != 0) {
+            program_id = program_id_;
+        }
     }
 
 private:
@@ -158,6 +162,7 @@ private:
     const GraphicsPipelineCacheKey key;
     Tegra::Engines::Maxwell3D* maxwell3d;
     Tegra::MemoryManager* gpu_memory;
+    u64 program_id{0};
     const Device& device;
     TextureCache& texture_cache;
     BufferCache& buffer_cache;

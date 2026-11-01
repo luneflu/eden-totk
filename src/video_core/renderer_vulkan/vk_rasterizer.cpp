@@ -82,7 +82,7 @@ VkViewport GetViewportState(const Device& device, const Maxwell& regs, size_t in
 
     if (lower_left) {
         // Flip by surface clip height
-        y += conv(static_cast<f32>(regs.surface_clip.height));
+        y = conv(static_cast<f32>(regs.surface_clip.height)) - y;
         height = -height;
     }
 
@@ -247,7 +247,7 @@ void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func) {
     }
     std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
     // update engine as channel may be different.
-    pipeline->SetEngine(maxwell3d, gpu_memory);
+    pipeline->SetEngine(maxwell3d, gpu_memory, program_id);
     if (!pipeline->Configure(is_indexed))
         return;
 

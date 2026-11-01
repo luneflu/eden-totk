@@ -549,6 +549,26 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
 }
 
 template <class P>
+void TextureCache<P>::DisableRescalingOnCurrentRenderTargets() {
+    for (size_t index = 0; index < NUM_RT; ++index) {
+        const ImageViewId color_buffer_id = render_targets.color_buffer_ids[index];
+        if (color_buffer_id != NULL_IMAGE_VIEW_ID && color_buffer_id != ImageViewId{}) {
+            Image& image = slot_images[slot_image_views[color_buffer_id].image_id];
+            image.info.rescaleable = false;
+            image.scale_rating = 0;
+            ScaleDown(image);
+        }
+    }
+    const ImageViewId depth_buffer_id = render_targets.depth_buffer_id;
+    if (depth_buffer_id != NULL_IMAGE_VIEW_ID && depth_buffer_id != ImageViewId{}) {
+        Image& image = slot_images[slot_image_views[depth_buffer_id].image_id];
+        image.info.rescaleable = false;
+        image.scale_rating = 0;
+        ScaleDown(image);
+    }
+}
+
+template <class P>
 typename P::Framebuffer* TextureCache<P>::GetFramebuffer() {
     if (last_framebuffer_id && last_framebuffer_serial == render_targets_serial) {
         return &slot_framebuffers[last_framebuffer_id];
