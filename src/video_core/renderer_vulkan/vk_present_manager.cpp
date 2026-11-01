@@ -192,8 +192,8 @@ Frame* PresentManager::GetRenderFrame() {
 }
 
 void PresentManager::Present(Frame* frame) {
-    // TEMP instrumentation: count the present requests of the guest.
-    {
+    static const bool trace_present = std::getenv("EDEN_FRAME_STATS") != nullptr;
+    if (trace_present) {
         static u64 requests{};
         static auto last_time{std::chrono::steady_clock::now()};
         ++requests;
@@ -603,8 +603,9 @@ void PresentManager::CopyToSwapchainImpl(Frame* frame) {
     // Present
     swapchain.Present(render_semaphore);
 
-    // TEMP instrumentation: frame counter and frame rate.
+    // Frame stats and admission control (diagnostics gated behind EDEN_FRAME_STATS).
     {
+        static const bool trace_stats = std::getenv("EDEN_FRAME_STATS") != nullptr;
         static u64 frame_count{};
         static u64 last_count{};
         static auto last_time{std::chrono::steady_clock::now()};
@@ -614,7 +615,7 @@ void PresentManager::CopyToSwapchainImpl(Frame* frame) {
         static double window_seconds{};
         ++frame_count;
         const auto now = std::chrono::steady_clock::now();
-        if (frame_count > 1) {
+        if (trace_stats && frame_count > 1) {
             window_ms.push_back(
                 1000.0 * std::chrono::duration<double>(now - last_frame).count());
         }
@@ -622,8 +623,10 @@ void PresentManager::CopyToSwapchainImpl(Frame* frame) {
         const double seconds = std::chrono::duration<double>(now - last_time).count();
         if (seconds >= 1.0) {
             const double mean_ms{1000.0 * seconds / static_cast<double>(frame_count - last_count)};
-            LOG_INFO(Render_Vulkan, "FrameStat: frames={} fps={:.2} ms/frame={:.2}", frame_count,
-                     static_cast<double>(frame_count - last_count) / seconds, mean_ms);
+            if (trace_stats) {
+                LOG_INFO(Render_Vulkan, "FrameStat: frames={} fps={:.2} ms/frame={:.2}", frame_count,
+                         static_cast<double>(frame_count - last_count) / seconds, mean_ms);
+            }
             const u64 drops_since_last{TakeDroppedDraws()};
             window_drops += drops_since_last;
             ObserveFrameTime(mean_ms, drops_since_last);
@@ -631,7 +634,7 @@ void PresentManager::CopyToSwapchainImpl(Frame* frame) {
             last_count = frame_count;
             last_time = now;
         }
-        if (window_seconds >= 10.0 && !window_ms.empty()) {
+        if (trace_stats && window_seconds >= 10.0 && !window_ms.empty()) {
             std::vector<double> sorted{window_ms};
             std::sort(sorted.begin(), sorted.end());
             const auto pct{[&sorted](double p) {
