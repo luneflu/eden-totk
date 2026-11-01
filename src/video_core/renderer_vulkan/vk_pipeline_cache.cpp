@@ -23,6 +23,7 @@
 #include "common/settings.h"
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
+#include "common/thread.h"
 #include "common/thread_worker.h"
 #include "core/core.h"
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
@@ -329,16 +330,15 @@ size_t RequestedPipelineWorkers() {
 }
 
 size_t GetTotalPipelineWorkers() {
-    // Compiling saturates memory bandwidth, and every extra worker steals a core from the guest.
-    // Half the logical processors keeps the shader pool below the emulation threads.
+    const size_t requested = RequestedPipelineWorkers();
     const size_t logical =
         std::max<size_t>(static_cast<size_t>(std::thread::hardware_concurrency()), 2ULL);
-    const size_t max_core_threads = std::max<size_t>(logical / 2, 2ULL);
-    const size_t requested = RequestedPipelineWorkers();
     if (requested != 0) {
         return std::min(requested, logical);
     }
-    return max_core_threads;
+    const size_t physical = Common::GetPhysicalCoreCount();
+    const size_t workers = physical > 2 ? physical - 2 : 1;
+    return std::clamp<size_t>(workers, 1ULL, 6ULL);
 }
 
 } // Anonymous namespace

@@ -114,5 +114,6 @@ void SetCurrentThreadToAllCores();
 
 void RefreshThreadPolicies();
 void PollThreadPolicies();
+[[nodiscard]] size_t GetPhysicalCoreCount();
 
 } // namespace Common

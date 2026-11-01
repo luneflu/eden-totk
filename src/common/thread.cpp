@@ -9,6 +9,7 @@
 #include <limits>
 #include <string>
 #include <thread>
+#include <bit>
 
 #include "common/adpf.h"
 #include "common/error.h"
@@ -715,6 +716,17 @@ void PollThreadPolicies() {
     }
     RefreshThreadPolicies();
 #endif
+}
+
+size_t GetPhysicalCoreCount() {
+#if defined(_WIN32)
+    const DWORD_PTR physical = GetWindowsCoreMasks().physical;
+    if (physical != 0) {
+        return static_cast<size_t>(std::popcount(static_cast<u64>(physical)));
+    }
+#endif
+    const size_t logical = std::thread::hardware_concurrency();
+    return std::max<size_t>(logical / 2, 1ULL);
 }
 
 #ifdef ARCHITECTURE_x86_64
