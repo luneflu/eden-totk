@@ -403,15 +403,17 @@ void ObserveFrameTime(double frame_ms, u64 recent_drops) {
     const bool too_slow = frame_ms > gate.best_frame_ms * 1.25;
     const bool fast_enough = frame_ms < gate.best_frame_ms * 1.10;
 
-    if (now - gate.last_change < std::chrono::seconds{2}) {
-        return;
-    }
     if (too_slow && gate.limit > 1) {
         gate.limit = 1;
         gate.recovered = 0;
         gate.last_change = now;
         gate.cv.notify_all();
-    } else if (fast_enough) {
+        return;
+    }
+    if (now - gate.last_change < std::chrono::seconds{2}) {
+        return;
+    }
+    if (fast_enough) {
         if (++gate.recovered >= 3 && gate.limit < ceiling) {
             gate.limit = ceiling;
             gate.recovered = 0;
