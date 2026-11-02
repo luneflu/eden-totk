@@ -660,7 +660,7 @@ struct Values {
     SwitchableSetting<bool> use_asynchronous_shaders{linkage, false, "use_asynchronous_shaders",
                                                      Category::RendererHacks};
 
-    SwitchableSetting<PipelineWorkers> pipeline_workers{linkage, PipelineWorkers::Adaptive,
+    SwitchableSetting<PipelineWorkers> pipeline_workers{linkage, PipelineWorkers::Auto,
                                                        "pipeline_workers",
                                                        Category::RendererHacks};
 

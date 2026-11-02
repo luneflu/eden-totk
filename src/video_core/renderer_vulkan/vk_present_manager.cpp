@@ -629,7 +629,6 @@ void PresentManager::CopyToSwapchainImpl(Frame* frame) {
             }
             const u64 drops_since_last{TakeDroppedDraws()};
             window_drops += drops_since_last;
-            ObserveFrameTime(mean_ms, drops_since_last);
             window_seconds += seconds;
             last_count = frame_count;
             last_time = now;

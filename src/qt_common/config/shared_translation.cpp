@@ -694,7 +694,7 @@ std::unique_ptr<ComboboxTranslationMap> ComboboxEnumeration(QObject* parent) {
 
     translations->insert({Settings::EnumMetadata<Settings::PipelineWorkers>::Index(),
                           {
-                              PAIR(PipelineWorkers, Adaptive, tr("Adaptive")),
+                              PAIR(PipelineWorkers, Auto, tr("Auto")),
                               PAIR(PipelineWorkers, One, tr("1 worker")),
                               PAIR(PipelineWorkers, Two, tr("2 workers")),
                               PAIR(PipelineWorkers, Three, tr("3 workers")),

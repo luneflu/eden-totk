@@ -315,12 +315,6 @@ GraphicsPipeline::GraphicsPipeline(
     }
 
     auto func{[this, shader_notify, &render_pass_cache, pipeline_statistics] {
-        EnterPipelineBuild();
-        const struct BuildScope {
-            ~BuildScope() {
-                ExitPipelineBuild();
-            }
-        } build_scope;
         const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(key.state, device))};
         Validate();
         try {

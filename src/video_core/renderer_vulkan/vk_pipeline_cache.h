@@ -72,12 +72,6 @@ static_assert(std::is_trivially_constructible_v<ComputePipelineCacheKey>);
 void RecordDroppedDraw();
 u64 TakeDroppedDraws();
 
-// Adaptive pipeline-build admission. Frames drive a concurrency limit between 1 and the
-// configured worker count, so a compile burst cannot push the frame time up.
-void ObserveFrameTime(double frame_ms, u64 dropped_draws);
-void EnterPipelineBuild();
-void ExitPipelineBuild();
-
 } // namespace Vulkan
 
 namespace std {
